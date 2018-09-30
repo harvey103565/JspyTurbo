@@ -92,3 +92,6 @@ dmypy.json
 *.log
 *.cmd
 *.xlsm
+tampermonkey/
+bin/
+.idea/
