@@ -16,13 +16,13 @@ _module_ = '模块名'
 _outline_ = '标题'
 
 _url_ = '链接'
-_setting_ = '设置'
+_turbo_ = '加速器'
 _project_ = '项目'
 _directory_ = '目录'
-_training_set_ = '训练集'
-_conf_ = 'D30'
-_window_ = 'D32'
-_mask_ = 'D34'
+_sample_ = '训练集'
+_conf_ = 'D28'
+_window_ = 'D30'
+_mask_ = 'D32'
 _address_ = 'A1'
 _isolation_ = '='
 
@@ -35,7 +35,7 @@ class Book(object):
 
         self._template_ = _template_
 
-        self._setting_ = _setting_
+        self._turbo_ = _turbo_
         self._project_ = _project_
         self._directory_ = _directory_
         self._conf_ = _conf_
@@ -52,7 +52,7 @@ class Book(object):
         load masking settings stored in excel.
         :return:  a dictionary contains global masking name and values
         """
-        sheet = self.book.sheets[self._setting_]
+        sheet = self.book.sheets[self._turbo_]
         return sheet.range(self._window_).value
 
     def masking(self) -> dict:
@@ -60,8 +60,8 @@ class Book(object):
         load masking settings stored in excel.
         :return:  a dictionary contains global masking name and values
         """
-        sheet = self.book.sheets[self._setting_]
-        expr = self.book.sheets[self._setting_].range(self._mask_).value
+        sheet = self.book.sheets[self._turbo_]
+        expr = self.book.sheets[self._turbo_].range(self._mask_).value
         return Book.load_mapping(sheet, expr, self._isolation_)
 
     def project(self) -> dict:
@@ -70,7 +70,7 @@ class Book(object):
         :return:  a dictionary contains global setting name and values
         """
         sheet = self.book.sheets[self._project_]
-        expr = self.book.sheets[self._setting_].range(self._conf_).value
+        expr = self.book.sheets[self._turbo_].range(self._conf_).value
         return Book.load_mapping(sheet, expr)
 
     def directory(self) -> dict:
@@ -169,7 +169,7 @@ class Book(object):
         Book.init_template(template, self.book.sheets[module], self._address_)
 
     def training_set(self):
-        sheet = self.book.sheets[_training_set_]
+        sheet = self.book.sheets[_sample_]
         return sheet.impl.xl.usedRange()
 
     @staticmethod

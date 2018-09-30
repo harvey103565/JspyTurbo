@@ -43,6 +43,8 @@ from model.constants import requirement_content_ as _requirement_content_
 from model.constants import page_outline_ as _page_outline_
 from model.constants import to_space_ as _to_space_
 from model.constants import locate_at_ as _locate_at_
+from model.constants import to_do_ as _to_do_
+
 
 
 match = (
@@ -194,7 +196,7 @@ class Composer(object):
         :param headers: the headers of table
         :return: <NA>
         """
-        if self.serializer:
+        if self.serializer and self.data[_to_do_]:
             serialnum = self.serializer.serialnum()
             self.data[self.serialnum] = serialnum
 
@@ -241,6 +243,10 @@ class Composer(object):
     def mirror_table(data: dict, content: str, header: str, keys: tuple, raw_keys: list):
         contents = dict()
         headers = dict()
+
+        if not data[_jira_story_]:
+            data[_jira_story_] = data[_page_outline_]
+
         for key in keys:
             if key in data:
                 similar = process.extractOne(key, raw_keys)
@@ -250,9 +256,6 @@ class Composer(object):
                 new_key = similar[0]
                 contents[new_key] = data[key]
                 headers[key] = new_key
-
-        if not contents[_jira_story_]:
-            contents[_jira_story_] = data[_page_outline_]
 
         data[content] = contents
         data[header] = headers

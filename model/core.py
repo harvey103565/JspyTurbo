@@ -7,9 +7,9 @@ import json
 from xls.book import Book
 from model.interval import Interval
 
+from model.constants import to_do_ as _to_do_
 
 _mission_ = '任务项'
-_to_do_ = '待处理'
 _url_ = '链接'
 _story_ = '故事链接'
 _s_ = '编号'

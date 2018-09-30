@@ -198,7 +198,6 @@
             var count = table1.children('tr').length;
             var contents = data[_PARAM_TABLE_];
             var headers = data[_PARAM_HEADER_];
-            var jira = data[_JIRA_STORY_];
             for (var i = 0; i < count; i ++) {
                 var row = table1.children(`tr:nth-child(${i + 1})`);
                 var header = row.children('*:first').text()
@@ -212,7 +211,7 @@
                         cell.text(content);
                     }
 
-                    if (header === jira) {
+                    if (header === headers[_JIRA_STORY_]) {
                         this.replace_story(cell, content, data[_CODE_NAME_]);
                     }
                 }
@@ -225,15 +224,17 @@
                 if (row.length === 0 || row[0] === undefined) {
                     break;
                 }
-                
-                var p = row.children('td:nth-child(1)').text();
-                var d = row.children('td:nth-child(2)').text();
+
+                var c1 = row.children('td:nth-child(1)')
+                var c2 = row.children('td:nth-child(2)') 
+                var p = c1.text();
+                var d = c2.text();
+                c1.empty();
+                c2.empty();
                 if ((p !== '' && d !== '') && (p !== undefined && d !== undefined) && (p !== null && d !== null)) {
-                    row.children('td:nth-child(1)').empty();
-                    row.children('td:nth-child(2)').empty();
+                    c1.text(owner);
+                    c2.text(date);
                 }
-                row.children('td:nth-child(1)').text(owner);
-                row.children('td:nth-child(2)').text(date);
             }
 
             return idle(1.6);
@@ -369,11 +370,27 @@
         }
 
         async jira(data) {
-            var table = $("#tinymce > table.wysiwyg-macro > tbody > tr > td > table", $("#wysiwygTextarea_ifr").contents());
-            if (table.find("tbody > tr:nth-child(7) > td:nth-child(1)").text() === '特性限制') {
-                var cell = table1.find("tbody > tr:nth-child(10) > td:nth-child(2)");
-            } else {
-                var jira = table.find("tbody > tr:nth-child(9) > td:nth-child(2)");
+            var contents = $("#wysiwygTextarea_ifr").contents()
+            var table1 = this.TableFor(_SERIAL_, undefined, contents);
+
+            var count = table1.children('tr').length;
+            var contents = data[_PARAM_TABLE_];
+            var headers = data[_PARAM_HEADER_];
+            var jira_header = headers[_JIRA_STORY_];
+            var jira = undefined
+            for (var i = 0; i < count; i ++) {
+                var row = table1.children(`tr:nth-child(${i + 1})`);
+                var header = row.children('*:first').text()
+
+                if (header === jira_header) {
+                    jira = row.children('td:nth-child(2)');
+                    break;
+                }
+            }
+
+            if (jira === undefined) {
+                alert('不能支持在当前页面格式下创建Jira任务。')
+                return;
             }
 
             var input = document.createElement('input');
@@ -508,27 +525,22 @@
             which.trigger('change');
         }
 
-        story(name, title) {
-            var jira = $('#main-content > div.plugin-tabmeta-details.conf-macro.output-block > div > table > tbody > tr:nth-child(9) > td:nth-child(2) > span.jira-issue');
-            var story = undefined;
-
-            if (jira.length === 0) {
-                return undefined;
+        story(jira_header) {
+            var table = this.TableFor(jira_header)
+            if (table.length === 1) {
+                var count = table.children('tr').length;
+                for (var i = 0; i < count; i ++) {
+                    var row = table.children(`tr:nth-child(${i + 1})`);
+                    var header = row.children('*:first').text()
+    
+                    if (header === jira_header) {
+                        var jira = row.children('td:nth-child(2)');
+                        return jira.find('span.jira-issue:last');
+                    }
+                }
             }
 
-            jira.each(function(i, e) {
-                story = $(e);
-                
-                var project = story.attr('data-jira-key');
-                var text = story.text();
-                var outline = story.find('span.summary').text();
-
-                if (project.indexOf(name) === -1 || outline !== title || text.indexOf(_REQUIREMENT_EDITTING_) === -1) {
-                        story = undefined;
-                }
-            });
-
-            return story;
+            return undefined;
         }
     }
 
@@ -746,9 +758,9 @@
         return data_sbj
             .toPromise()
             .then(async function (data) {
-                var project = data[_CODE_NAME_];
-                var outline = data[_REQUIREMENT_NAME_];
-                var story = page.story(project, outline);
+                var headers = data[_PARAM_HEADER_];
+                var jira_header = headers[_JIRA_STORY_];
+                var story = page.story(jira_header);
 
                 if (story !== undefined) {
                     var url = page.StoryHref(story);

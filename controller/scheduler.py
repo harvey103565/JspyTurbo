@@ -115,8 +115,14 @@ class Scheduler(object):
 
         return params
 
-    def jira(self, url, data: dict):
-        self.jiras[url] = data
+    def jira(self, url, info: dict):
+        """
+        Record a jira
+        :param url:
+        :param info:
+        :return:
+        """
+        self.jiras[url] = info
 
     def jira_done(self, url):
         argus = self.jiras.pop(url)

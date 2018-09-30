@@ -158,10 +158,10 @@
                         reject(Error(r.responseText));
                     }
                 }
-            })
-            .catch(err => alert(err.message));
+            });
         });
     }
+    
 
     function HttpAction(module, requirement) {
         var data = {};
