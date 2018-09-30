@@ -99,8 +99,10 @@ def jira():
         params = request.get_json()
         url = params['url']
 
-        scheduler.jira(url, params)
-        return '{"Done": "true", "Logging": "Done"}'
+        if scheduler.jira(url, params):
+            return '{"jira": "true", "Done": "true", "Logging": "Done"}'
+        else:
+            return '{"jira": "false", "Logging": "Done"}'
     except Exception as e:
         log.error(repr(e))
         log.exception(str(e), exc_info=True, stack_info=True)

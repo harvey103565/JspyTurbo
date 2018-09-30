@@ -534,12 +534,15 @@
                     var header = row.children('*:first').text()
     
                     if (header === jira_header) {
-                        var jira = row.children('td:nth-child(2)');
-                        return jira.find('span.jira-issue:last');
+                        var text = "需求编写中"
+                        // var text = _PARAM_WRITING_
+                        var span = row.find(`span:contains("${text}")`)
+                        if (span.length > 0) {
+                            return span.closest('span.jira-issue').last()
+                        }
                     }
                 }
             }
-
             return undefined;
         }
     }
@@ -764,13 +767,20 @@
 
                 if (story !== undefined) {
                     var url = page.StoryHref(story);
-                    await HttpJira(info, url);
-        
-                    page.navigate(url);
+                    await HttpJira(info, url)
+                        .then(t => JSON.parse(t))
+                        .then(async function (data) {
+                            var edition = data['jira']
+                            if (edition === "false") {
+                                return idle(0.8);
+                            }
 
-                    // 等待一小时并报错
-                    await idle(60*60);
-                    return Promise.reject(Error('保存编辑超时，重新点击需求链接重试。'));
+                            page.navigate(url);
+                            // 等待一小时并报错
+                            await idle(60*60);
+                            return Promise.reject(Error('保存编辑超时，重新点击需求链接重试。'));
+                        });
+        
                 } else {
                     return idle(0.8);
                 }

@@ -162,15 +162,6 @@
         });
     }
     
-
-    function HttpAction(module, requirement) {
-        var data = {};
-        data[_PARAM_MODULE_] = module;
-        data[_PARAM_REQUIREMENT_] = requirement;
-
-        return http('POST', 'action', data);
-    }
-
     function QueryJira(url) {
         var data = {};
         data[_PARAM_URL_] = url;
@@ -216,18 +207,11 @@
         return Promise.resolve(true);
     }
 
-    async function StartJira(page, info, url) {
-        var module = info[_PARAM_MODULE_];
-        var requirement = info[_PARAM_REQUIREMENT_];
+    async function StartJira(page, act_data, url) {
+        var module = act_data[_PARAM_MODULE_];
         var wiki_url = page.wiki_href();
 
-        await Rx.Observable
-            .from(HttpAction(module, requirement))
-            .map(t => JSON.parse(t))
-            .toPromise()
-            .then(function(act_data) {
-                return JiraAction(page, act_data);
-            })
+        await JiraAction(page, act_data)
             .then(() => JiraDone(url))
             .then(() => dotodos(page, module, wiki_url))
             .catch(() => dotodos(page, module, wiki_url));

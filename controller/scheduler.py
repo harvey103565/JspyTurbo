@@ -7,6 +7,8 @@ from model.packer import _m_
 from model.packer import _r_
 
 from model.constants import page_url_ as _page_url_
+from model.constants import to_do_ as _to_do_
+
 
 
 class Scheduler(object):
@@ -15,6 +17,7 @@ class Scheduler(object):
         self.packer = Packer(model)
         self.doing = dict()
         self.jiras = dict()
+        self.actions = dict()
         self.modules = set()
 
         self._project_ = _project_
@@ -74,11 +77,20 @@ class Scheduler(object):
         for mod in self.modules:
             self.model.module_set(mod)
             self.packer.module_set(mod)
+            self.module_set(mod)
+
+    def module_set(self, mod: str):
+        entry = self.actions.pop(mod)
+        entry.clear()
 
     def done(self, module: str='', requirement: str= '', serial: str=''):
         mod = self.packer.purify(module)
 
         self.modules.add(mod)
+
+        params = self.get_cached_action(module, requirement)
+        if params:
+            params[_to_do_] = False
 
         if requirement:
             composer = self.packer.module_composer(module)
@@ -105,39 +117,51 @@ class Scheduler(object):
             mod = module
             req = requirement
 
-        if req:
-            params = self.compose_requirement(mod, req, headers)
-        else:
-            params = self.compose_module(mod)
+        params = self.get_cached_action(mod, req)
+        if not params:
+            if req:
+                params = self.compose_requirement(mod, req, headers)
+            else:
+                params = self.compose_module(mod)
 
         if not argus:
             self.packer.record(module, req, params)
 
         return params
 
-    def jira(self, url, info: dict):
+    def jira(self, url, info: dict) -> bool:
         """
         Record a jira
-        :param url:
-        :param info:
+        :param url: jira url
+        :param info: module and requirement tittle in raw
         :return:
         """
+        if url in self.jiras:
+            return False
+
         self.jiras[url] = info
+        return True
 
     def jira_done(self, url):
         argus = self.jiras.pop(url)
 
-        module = argus[_m_]
-        requirement = argus[_r_]
-
-        mod = self.packer.purify(module)
+        mod = self.packer.purify(argus[_m_])
         rinser = self.packer.module_rinser(mod)
-        req = rinser.purify(requirement)
+
+        req = rinser.purify(argus[_r_])
 
         self.model.jira_done(mod, req, url)
 
     def query_jira(self, url):
-        return self.jiras[url]
+        info = self.jiras[url]
+
+        mod = info[_m_]
+        req = info[_r_]
+
+        params = self.get_cached_action(mod, req)
+        params.update(info)
+
+        return params
 
     def update_directory(self, modules: iter=tuple()):
         """
@@ -172,23 +196,47 @@ class Scheduler(object):
         entry = self.model.module_entry(mod)
 
         composer = self.packer.composer()
-        composer.extend(entry)
+        data = composer.compose(mod, entry)
 
-        composer.compose(mod)
+        self.cache_action(module, None, data)
 
-        return composer.params()
+        return data
 
     def compose_requirement(self, module, requirement, headers):
         mod = self.packer.purify(module)
         entry = self.model.module_entry(mod)
 
         composer = self.packer.module_composer(module)
-        req_name = composer.purify(requirement)
+        req = composer.purify(requirement)
 
-        detail = self.model.requirement(mod, req_name)
-        composer.extend(entry)
-        composer.extend(detail)
+        detail = self.model.requirement(mod, req)
+        data = composer.compose(req, entry, detail, headers=headers)
 
-        composer.compose(req_name, headers)
+        self.cache_action(module, requirement, data)
 
-        return composer.params()
+        return data
+
+    def cache_action(self, mod, req, data):
+        if mod not in self.actions:
+            self.actions[mod] = dict()
+
+        mod_entry = self.actions[mod]
+
+        if req:
+            if req not in mod_entry:
+                mod_entry[req] = data
+        else:
+            mod_entry[_m_] = data
+
+    def get_cached_action(self, module, requirement):
+        if module not in self.actions:
+            return None
+
+        mod_entry = self.actions[module]
+        if not requirement:
+            return mod_entry[_m_]
+        elif requirement in mod_entry:
+            return mod_entry[requirement]
+        else:
+            return None
+

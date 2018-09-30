@@ -189,25 +189,32 @@ class Composer(object):
         self.serialnum = serialnum
         self.serializer = serializer
 
-    def compose(self, name: str, headers: list=None):
+    def compose(self, name: str, *exts: dict, headers: list=None):
         """
         The final step to generate outline, module/requirement name is used as parameter input
         :param name: name of module or requirement
         :param headers: the headers of table
         :return: <NA>
         """
-        if self.serializer and self.data[_to_do_]:
+        data = self.data.copy()
+
+        for e in exts:
+            data.update(e)
+
+        if self.serializer and data[_to_do_]:
             serialnum = self.serializer.serialnum()
-            self.data[self.serialnum] = serialnum
+            data[self.serialnum] = serialnum
 
-        self.data[self.name] = name
-        outline = Packer.pattern(self.composition, self.data)
-        self.data[_page_outline_] = outline
+        data[self.name] = name
+        outline = Packer.pattern(self.composition, data)
+        data[_page_outline_] = outline
 
-        self.data[_tag_serial_] = self.tags()
+        data[_tag_serial_] = self.tags()
 
         if headers:
-            Composer.mirror_table(self.data, self._t_, self._h_, table_keys, headers)
+            Composer.mirror_table(data, self._t_, self._h_, table_keys, headers)
+
+        return data
 
     def purify(self, name: str) -> str:
         """
@@ -219,21 +226,6 @@ class Composer(object):
             raise AssertionError('服务器错误, 没有为 {} 指定名称提取器.'.format(name))
 
         return self.rinser.purify(name)
-
-    def extend(self, detail: dict):
-        """
-        Extend data with requirement or module details, make sure composition contain enough data
-        :param detail: the detail of requirement or module
-        :return:
-        """
-        self.data.update(detail)
-
-    def params(self) -> dict:
-        """
-        Get the data of composer
-        :return: Composer data
-        """
-        return self.data
 
     def tags(self) -> str:
         pattern = self.data[_tags_]
