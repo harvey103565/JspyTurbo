@@ -825,10 +825,7 @@
         await enter_edition(page);
 
         // Rename with data
-        await rename_page(page, data_sbj)
-            .then(function () {
-                return HttpDone(info, '');
-            });
+        await rename_page(page, data_sbj);
 
         return save_edition(page);
     }
@@ -886,6 +883,9 @@
                 if (on_doing === true) {
                     return DoModuleActionDirectly(task_sbj, data_sbj, page, info);
                 }
+            })
+            .then(function () {
+                return HttpDone(info, '');
             })
             .then(function () {
                 return do_todos(page, info);

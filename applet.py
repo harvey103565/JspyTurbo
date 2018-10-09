@@ -204,17 +204,20 @@ def project():
 def scripts():
 
     static_file = {
-        'wiki_js': url_for('static', filename='scripts/wiki.user.js'),
-        'jira_js': url_for('static', filename='scripts/jira.user.js')
+        'wiki_user_js': url_for('static', filename='scripts/wiki.user.js'),
+        'jira_user_js': url_for('static', filename='scripts/jira.user.js'),
+        'wiki_page_js': url_for('static', filename='scripts/wiki.page.js'),
+        'jira_page_js': url_for('static', filename='scripts/jira.page.js'),
+        'constants_js': url_for('static', filename='scripts/constants.js')
     }
 
     return '''<html>
         <h1>安装脚本</h1>
         <body>
             <p>安装用于Wiki系统的脚本：</p>
-            <a href="{wiki_js}">Wiki 脚本</a>
+            <a href="{wiki_user_js}">Wiki 脚本</a>
             <p>安装用于Jira系统的脚本：</p>
-            <a href="{jira_js}">Jira 脚本</a>
+            <a href="{jira_user_js}">Jira 脚本</a>
             <p>Jira系统的脚本用于在jira.zte.com.cn系统中执行包含Jira任务的批量处理。</p>
         </body>
         </html>'''.format(**static_file)

@@ -10,7 +10,6 @@ from model.constants import page_url_ as _page_url_
 from model.constants import to_do_ as _to_do_
 
 
-
 class Scheduler(object):
     def __init__(self, model, _project_: str= '项目', _module_: str= '模块', _requirement_: str= '需求'):
         self.model = model
@@ -18,7 +17,6 @@ class Scheduler(object):
         self.doing = dict()
         self.jiras = dict()
         self.actions = dict()
-        self.modules = set()
 
         self._project_ = _project_
         self._module_ = _module_
@@ -51,6 +49,7 @@ class Scheduler(object):
         :param module: current module
         """
         todo = dict()
+        todo[_page_url_] = ''
 
         if module:
             mod = self.packer.purify(module)
@@ -60,33 +59,30 @@ class Scheduler(object):
                 todo[_page_url_] = next(reqs)
                 return todo
             except StopIteration:
-                self.model.module_set(mod)
-                self.packer.module_set(mod)
-                self.doing.pop(mod)
+                self.module_set(mod, module)
 
         mods = self.module_to_do()
         try:
             todo[_page_url_] = next(mods)
         except StopIteration:
             self.finish_all()
-            todo[_page_url_] = ''
 
         return todo
 
     def finish_all(self):
-        for mod in self.modules:
-            self.model.module_set(mod)
-            self.packer.module_set(mod)
-            self.module_set(mod)
+        self.doing.clear()
+        self.actions.clear()
 
-    def module_set(self, mod: str):
-        entry = self.actions.pop(mod)
+    def module_set(self, mod: str, module: str):
+        self.model.module_set(mod)
+        self.packer.module_set(mod)
+
+        self.doing.pop(mod)
+        entry = self.actions.pop(module)
         entry.clear()
 
     def done(self, module: str='', requirement: str= '', serial: str=''):
         mod = self.packer.purify(module)
-
-        self.modules.add(mod)
 
         params = self.get_cached_action(module, requirement)
         if params:

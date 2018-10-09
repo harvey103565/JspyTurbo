@@ -13,6 +13,7 @@ var _PARAM_TABLE_ = 'table';
 var _PARAM_HEADER_ = 'header';
 var _PARAM_APPEND_ = '++';
 var _PARAM_DELETE_ = '--\\s+(.+)';
+var _PARAM_WRITING_ = '需求编写中'
 
 var _DRAW_MODULE_ = '提取名称';
 var _DRAW_REQUIREMENT_ = '提取特性名称';

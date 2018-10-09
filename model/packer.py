@@ -140,17 +140,18 @@ class Rinser(object):
 
 
 class Serializer(object):
-    def __init__(self, pattern: str, data: dict, occupieds: set):
+    def __init__(self, pattern: str, occupieds: set):
         self.occupieds = occupieds
-        self.serialization = Serializer.serialization(1, pattern, data, occupieds)
+        self.serialization = Serializer.serialization(1, pattern, occupieds)
+        self.serialization.send(None)
 
-    def serialnum(self) -> str:
-        serialnum = next(self.serialization)
+    def serialnum(self, data: dict) -> str:
+        serialnum = self.serialization.send(data)
         self.occupieds.add(serialnum)
         return serialnum
 
     @staticmethod
-    def serialization(init: int, pattern: str, data: dict, occupied: iter) -> str:
+    def serialization(init: int, pattern: str, occupied: iter) -> str:
         """
         Create a generator that generates serial number and exclude those already existed in occupieds
         :param init: init value that serialnum starts
@@ -160,11 +161,14 @@ class Serializer(object):
         :return: a new serial string
         """
         sn = init
+        ss = ''
         while True:
-            ss = pattern.format(sn, **data)
-            if ss not in occupied:
-                yield ss
-            sn += 1
+            data = yield ss
+            do_new = True
+            while do_new:
+                ss = pattern.format(sn, **data)
+                sn += 1
+                do_new = ss in occupied
 
 
 class Composer(object):
@@ -202,14 +206,14 @@ class Composer(object):
             data.update(e)
 
         if self.serializer and data[_to_do_]:
-            serialnum = self.serializer.serialnum()
+            serialnum = self.serializer.serialnum(data)
             data[self.serialnum] = serialnum
 
         data[self.name] = name
         outline = Packer.pattern(self.composition, data)
         data[_page_outline_] = outline
 
-        data[_tag_serial_] = self.tags()
+        data[_tag_serial_] = Composer.tags(data)
 
         if headers:
             Composer.mirror_table(data, self._t_, self._h_, table_keys, headers)
@@ -227,9 +231,10 @@ class Composer(object):
 
         return self.rinser.purify(name)
 
-    def tags(self) -> str:
-        pattern = self.data[_tags_]
-        return pattern.format(**self.data)
+    @staticmethod
+    def tags(data) -> str:
+        pattern = data[_tags_]
+        return pattern.format(**data)
 
     @staticmethod
     def mirror_table(data: dict, content: str, header: str, keys: tuple, raw_keys: list):
@@ -272,7 +277,7 @@ class Packer(object):
         self.rinsers = dict()
         rinser = self.rinser(_draw_module_)
 
-        serializer = self.serializer(_generate_serial_, self.config)
+        serializer = self.serializer(_generate_serial_)
         composer = Composer(self.matchers[_module_naming_], _module_name_, self.config,
                             rinser=rinser, serializer=serializer)
         self.composers = dict([(self._m_, composer)])
@@ -285,7 +290,7 @@ class Packer(object):
             rinser = self.module_rinser(mod)
 
             data = Packer.filter(configure, self.config, entry)
-            serializer = self.serializer(_generate_serial_, data, mod)
+            serializer = self.serializer(_generate_serial_, mod)
 
             composer = Composer(self.matchers[_requirement_naming_], _requirement_name_,
                                 data, rinser=rinser, serializer=serializer)
@@ -313,7 +318,7 @@ class Packer(object):
     def purify(self, name: str, module: str=_m_) -> str:
         return self.rinsers[module].purify(name)
 
-    def serializer(self, key: str, data: dict, module: str=None):
+    def serializer(self, key: str, module: str=None):
         """
         Create a Serializer object
         :param key: the name used to select prototype
@@ -325,7 +330,7 @@ class Packer(object):
             occupieds = self.model.serials(module)
         else:
             occupieds = set()
-        return Serializer(self.matchers[key], data, occupieds)
+        return Serializer(self.matchers[key], occupieds)
 
     def record(self, module, requirement, params):
         """
