@@ -9,6 +9,7 @@
 // @connect      127.0.0.1
 // @require      https://cdnjs.cloudflare.com/ajax/libs/rxjs/5.3.0/Rx.min.js
 // @require      http://localhost:8086/static/scripts/constants.js
+// @require      http://localhost:8086/static/scripts/jira.page.js
 // ==/UserScript==
 
 
@@ -21,95 +22,95 @@
 
     console.log('### starting Jira user js.');
 
-    class Page {
+    // class Page {
 
-        Href() {
-            return window.location.href;
-        }
+    //     Href() {
+    //         return window.location.href;
+    //     }
 
-        Name() {
-            return $('h1#title-text>a').text();
-        }
+    //     Name() {
+    //         return $('h1#title-text>a').text();
+    //     }
 
-        wiki_href() {
-            return $('#description-val > div > p > a')[0].href;
-        }
+    //     wiki_href() {
+    //         return $('#description-val > div > p > a')[0].href;
+    //     }
 
-        async jump(path) {
-            window.location.pathname = path;
-        }
+    //     async jump(path) {
+    //         window.location.pathname = path;
+    //     }
 
-        async navigate(href) {
-            window.location.href = href;
-        }
+    //     async navigate(href) {
+    //         window.location.href = href;
+    //     }
 
-        async edit() {
-            $('#edit-issue').click();
-            await idle(1.5);
+    //     async edit() {
+    //         $('#edit-issue').click();
+    //         await idle(1.5);
 
-            return Promise.resolve(true);
-        }
+    //         return Promise.resolve(true);
+    //     }
 
-        async input(which, what) {
-			which.focus()
-			which.trigger('keydown');
-			which.val(what);
-            which.trigger('keyup');
-            which.trigger('input');
-            which.trigger('change');
-        }
+    //     async input(which, what) {
+	// 		which.focus()
+	// 		which.trigger('keydown');
+	// 		which.val(what);
+    //         which.trigger('keyup');
+    //         which.trigger('input');
+    //         which.trigger('change');
+    //     }
 
-        async to_finish() {
-            $('#action_id_201').click();
-            await idle(1);
+    //     async to_finish() {
+    //         $('#action_id_201').click();
+    //         await idle(1);
 
-            return Promise.resolve(true);
-        }
+    //         return Promise.resolve(true);
+    //     }
 
-        async jira(data) {
-            var assignee = data[_ASSIGNEE_];
-            this.input($('#assignee-field'), assignee);
-            await idle(3.2);
-            $('div#assignee-suggestions > div > ul > li:first').click()
+    //     async jira(data) {
+    //         var assignee = data[_ASSIGNEE_];
+    //         this.input($('#assignee-field'), assignee);
+    //         await idle(3.2);
+    //         $('div#assignee-suggestions > div > ul > li:first').click()
 
-            var text = '';
-            var multi_assignees = data[_MULTI_ASSIGNEE_];
-            var input_box = $('#customfield_10511');
-            for (var one of multi_assignees.split(',')) {
-                this.input(input_box, text + one);
-                await idle(3.2);
+    //         var text = '';
+    //         var multi_assignees = data[_MULTI_ASSIGNEE_];
+    //         var input_box = $('#customfield_10511');
+    //         for (var one of multi_assignees.split(',')) {
+    //             this.input(input_box, text + one);
+    //             await idle(3.2);
 
-                $('#edit-issue-dialog > div.jira-dialog-content > div.qf-container > div > form > div.form-body > div > div:nth-child(5) > div > div > ul > li:first').click()
-                await idle(0.8)
+    //             $('#edit-issue-dialog > div.jira-dialog-content > div.qf-container > div > form > div.form-body > div > div:nth-child(5) > div > div > ul > li:first').click()
+    //             await idle(0.8)
 
-                text = input_box.val();
-            }
+    //             text = input_box.val();
+    //         }
 
-            var reportee = data[_REPORTEE_];
-            if (reportee !== undefined && reportee !== null && reportee !== '') {
-                this.input($('#reporter-field'), reportee);
-                await idle(3.2);
-                $('div#reporter-suggestions > div > ul > li:first').click();
-            }
+    //         var reportee = data[_REPORTEE_];
+    //         if (reportee !== undefined && reportee !== null && reportee !== '') {
+    //             this.input($('#reporter-field'), reportee);
+    //             await idle(3.2);
+    //             $('div#reporter-suggestions > div > ul > li:first').click();
+    //         }
 
-            var version = data[_REVISION_];
-            this.input($('#customfield_14503'), version);
+    //         var version = data[_REVISION_];
+    //         this.input($('#customfield_14503'), version);
 
-            var serial = data[_REQUIREMENT_SERIAL_];
-            this.input($('#customfield_14600'), serial);
+    //         var serial = data[_REQUIREMENT_SERIAL_];
+    //         this.input($('#customfield_14600'), serial);
 
-            await idle(0.8);
+    //         await idle(0.8);
 
-            return Promise.resolve(true);
-        }
+    //         return Promise.resolve(true);
+    //     }
 
-        async save() {
-            $('#edit-issue-submit').click()
-            await idle(1.5);''
+    //     async save() {
+    //         $('#edit-issue-submit').click()
+    //         await idle(1.5);''
 
-            return Promise.resolve(true);
-        }
-    }
+    //         return Promise.resolve(true);
+    //     }
+    // }
 
     function idle(s) {
         return new Promise(resolve => setTimeout(resolve, s * _SECOND_));

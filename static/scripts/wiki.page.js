@@ -1,10 +1,5 @@
+
 var WikiPage = function(project) {
-    this.root = this.Branch(project);
-    this.current = this.root;
-
-    this.module = ''
-    this.requirement = ''
-
     this.Href = function() {
         return window.location.href;
     }
@@ -63,7 +58,7 @@ var WikiPage = function(project) {
         return this.current.is(this.root);
     }
 
-   this.Type = function() {
+    this.Type = function() {
         this.HighLightten()
         if (this.IsRoot()) {
             return _P_;
@@ -142,52 +137,6 @@ var WikiPage = function(project) {
         which[0].innerHTML = h;
     }
 
-    this.replace_story = function(which, what, name) {
-        var stories = which.find('img');
-        for (var i = 0; i < stories.length; i ++) {
-            var story = $(stories[i]);
-             if (story.attr('data-macro-parameters').indexOf(name) === -1) {
-                    story.remove();
-            }
-        }
-        var html = which[0].innerHTML.trim();
-        var text = which[0].innerText.trim();
-        which.empty();
-        which[0].innerHTML = html.replace(text, what);
-    }
-
-    this.input = function(which, what) {
-        which.focus()
-        which.trigger('keydown');
-        which.val(what);
-        which.trigger('keyup');
-        which.trigger('input');
-        which.trigger('change');
-    }
-
-    this.story = function(name, title) {
-        var jira = $('#main-content > div.plugin-tabmeta-details.conf-macro.output-block > div > table > tbody > tr:nth-child(9) > td:nth-child(2) > span.jira-issue');
-        var story = undefined;
-
-        if (jira.length === 0) {
-            return undefined;
-        }
-
-        jira.each(function(i, e) {
-            story = $(e);
-            
-            var project = story.attr('data-jira-key');
-            var text = story.text();
-            var outline = story.find('span.summary').text();
-
-            if (project.indexOf(name) === -1 || outline !== title || text.indexOf(_REQUIREMENT_EDITTING_) === -1) {
-                    story = undefined;
-            }
-        });
-
-        return story;
-    }
-
     this.edit = async function() {
         await dom_trigger('#content', 
             function (mutation) {
@@ -220,7 +169,6 @@ var WikiPage = function(project) {
         var count = table1.children('tr').length;
         var contents = data[_PARAM_TABLE_];
         var headers = data[_PARAM_HEADER_];
-        var jira = data[_JIRA_STORY_];
         for (var i = 0; i < count; i ++) {
             var row = table1.children(`tr:nth-child(${i + 1})`);
             var header = row.children('*:first').text()
@@ -234,7 +182,7 @@ var WikiPage = function(project) {
                     cell.text(content);
                 }
 
-                if (header === jira) {
+                if (header === headers[_JIRA_STORY_]) {
                     this.replace_story(cell, content, data[_CODE_NAME_]);
                 }
             }
@@ -247,15 +195,17 @@ var WikiPage = function(project) {
             if (row.length === 0 || row[0] === undefined) {
                 break;
             }
-            
-            var p = row.children('td:nth-child(1)').text();
-            var d = row.children('td:nth-child(2)').text();
+
+            var c1 = row.children('td:nth-child(1)')
+            var c2 = row.children('td:nth-child(2)') 
+            var p = c1.text();
+            var d = c2.text();
+            c1.empty();
+            c2.empty();
             if ((p !== '' && d !== '') && (p !== undefined && d !== undefined) && (p !== null && d !== null)) {
-                row.children('td:nth-child(1)').empty();
-                row.children('td:nth-child(2)').empty();
+                c1.text(owner);
+                c2.text(date);
             }
-            row.children('td:nth-child(1)').text(owner);
-            row.children('td:nth-child(2)').text(date);
         }
 
         return idle(1.6);
@@ -391,11 +341,27 @@ var WikiPage = function(project) {
     }
 
     this.jira = async function(data) {
-        var table = $("#tinymce > table.wysiwyg-macro > tbody > tr > td > table", $("#wysiwygTextarea_ifr").contents());
-        if (table.find("tbody > tr:nth-child(7) > td:nth-child(1)").text() === '特性限制') {
-            var cell = table1.find("tbody > tr:nth-child(10) > td:nth-child(2)");
-        } else {
-            var jira = table.find("tbody > tr:nth-child(9) > td:nth-child(2)");
+        var contents = $("#wysiwygTextarea_ifr").contents()
+        var table1 = this.TableFor(_SERIAL_, undefined, contents);
+
+        var count = table1.children('tr').length;
+        var contents = data[_PARAM_TABLE_];
+        var headers = data[_PARAM_HEADER_];
+        var jira_header = headers[_JIRA_STORY_];
+        var jira = undefined
+        for (var i = 0; i < count; i ++) {
+            var row = table1.children(`tr:nth-child(${i + 1})`);
+            var header = row.children('*:first').text()
+
+            if (header === jira_header) {
+                jira = row.children('td:nth-child(2)');
+                break;
+            }
+        }
+
+        if (jira === undefined) {
+            alert('不能支持在当前页面格式下创建Jira任务。')
+            return;
         }
 
         var input = document.createElement('input');
@@ -506,4 +472,55 @@ var WikiPage = function(project) {
         await idle(60*60);
         return Promise.reject(Error('保存编辑超时，重新点击需求链接重试。'));
     }
+
+    this.replace_story = function(which, what, name) {
+        var stories = which.find('img');
+        for (var i = 0; i < stories.length; i ++) {
+            var story = $(stories[i]);
+                if (story.attr('data-macro-parameters').indexOf(name) === -1) {
+                    story.remove();
+            }
+        }
+        var html = which[0].innerHTML.trim();
+        var text = which[0].innerText.trim();
+        which.empty();
+        which[0].innerHTML = html.replace(text, what);
+    }
+
+    this.input = function(which, what) {
+        which.focus()
+        which.trigger('keydown');
+        which.val(what);
+        which.trigger('keyup');
+        which.trigger('input');
+        which.trigger('change');
+    }
+
+    this.story = function(jira_header) {
+        var table = this.TableFor(jira_header)
+        if (table.length === 1) {
+            var count = table.children('tr').length;
+            for (var i = 0; i < count; i ++) {
+                var row = table.children(`tr:nth-child(${i + 1})`);
+                var header = row.children('*:first').text()
+
+                if (header === jira_header) {
+                    var text = "需求编写中"
+                    // var text = _PARAM_WRITING_
+                    var span = row.find(`span:contains("${text}")`)
+                    if (span.length > 0) {
+                        return span.closest('span.jira-issue').last()
+                    }
+                }
+            }
+        }
+        return undefined;
+    }
+
+    this.root = this.Branch(project);
+    this.current = this.root;
+
+    this.module = ''
+    this.requirement = ''
+
 }

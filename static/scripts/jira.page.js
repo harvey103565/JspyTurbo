@@ -67,7 +67,7 @@ var JiraPage = function() {
         if (reportee !== undefined && reportee !== null && reportee !== '') {
             this.input($('#reporter-field'), reportee);
             await idle(3.2);
-            $('div#reporter-suggestions > div > ul > li:first').click();
+            $('ul#suggestions > li:first').click()
         }
 
         var version = data[_REVISION_];
